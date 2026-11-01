@@ -12,7 +12,7 @@ Bolsillos is a household money policy on NEAR. When a USDC payment arrives, the 
 
 1. Open the static UI: `cd web/dist && python3 -m http.server 8080` → http://127.0.0.1:8080 (or `cd web && npm install && npm run dev`).
 2. Click **Connect wallet** → prefer **Meteor Wallet** (opens a **web wallet tab**; extension optional). **HERE** is listed for mobile. **MyNearWallet** is listed last as *retired* and may refuse new app connections.
-3. **Judge note:** a brand-new testnet account needs **~1 NEAR** to add the app login key. Fund it from the [NEAR testnet faucet](https://near-faucet.io/) or the [official docs faucet](https://docs.near.org/getting-started/faucet) (both verified reachable), then retry Connect. Confirm in the wallet **tab**, not an extension window.
+3. **Judge note:** a brand-new testnet account needs **~1 NEAR** to add the app login key. Prefer the [official docs faucet](https://docs.near.org/getting-started/faucet); [near-faucet.io](https://near-faucet.io/) is a fallback (it may error). In **Meteor**, switch the network dropdown to **Testnet** (it defaults to Mainnet). Confirm in the wallet **tab**.
 4. **Mint** 200 mUSDC to yourself → **Pay household** → watch pockets update. Or **Create household** via the factory (`<name>.b575-factory.testnet`, ~3 NEAR). Withdraw from a pocket you own to an allowlisted recipient; contract panics (`exceeds daily cap`, `only pocket owner can withdraw`, `recipient not allowlisted`) show in the UI.
 5. Toggle **ES** for Rioplatense Spanish. Gasless withdraw stays CLI-only: `cd relayer && node demo-gasless.mjs` (relayer secrets never ship to the browser).
 
@@ -37,7 +37,7 @@ Bolsillos is a household money policy on NEAR. When a USDC payment arrives, the 
 | `cd contracts && cargo test` | **16 passed** |
 | `cd mock-usdc && cargo test` | **4 passed** |
 | `cd factory && cargo test` | **7 passed** |
-| Serve `web/dist/` or `npm run dev` in `web/` | Live pockets + Wallet Selector (Meteor first, HERE, MNW retired) |
+| Serve `web/dist/` or `npm run dev` in `web/` | Live pockets + Wallet Selector (Meteor / Intear / HERE; MNW retired) |
 | Click “Pay 200 USDC” explorer link below | `EVENT_JSON` `split` with `amount` `200000000` and pocket credits 80/50/30/20/20 |
 | Mom `withdraw_pocket` 10 → `b575-momdest.testnet` | `EVENT_JSON` `withdraw_pocket`; momdest `ft_balance_of` grows |
 | Run `node relayer/demo-gasless.mjs` | Relayer submits Mom’s meta-tx; explorer shows relayer as signer, Mom as delegated sender |
@@ -119,7 +119,7 @@ Pockets after the 200 USDC payment (before later withdraws): spend 80 · rent 50
 | Meta-transactions | `relayer/demo-gasless.mjs` + `server.mjs` gate | [Meta transactions](https://docs.near.org/web3-apps/tutorials/meta-transactions) |
 | Named testnet accounts / subaccounts | faucet `b575-*.testnet` + factory `<name>.factory` | [Accounts](https://docs.near.org/protocol/accounts-contracts/account-id) |
 | NEP-297 events | `split`, `withdraw_pocket`, `create_household`, … | [NEP-297](https://github.com/near/NEPs/blob/master/neps/nep-0297.md) |
-| Wallet Selector v10 | `web/` (Meteor first, HERE, MyNearWallet retired) | [Wallet Selector](https://github.com/near/wallet-selector) |
+| Wallet Selector v10 | `web/` (Meteor, Intear, HERE; MyNearWallet retired) | [Wallet Selector](https://github.com/near/wallet-selector) |
 | near-sdk / cargo-near | Rust contracts | [near-sdk](https://docs.near.org/smart-contracts/what-is) |
 
 ## Wallets (testnet)
@@ -128,11 +128,14 @@ Verified for judges (Nov 2026):
 
 | Wallet | Role | Notes |
 |---|---|---|
-| **Meteor Wallet** | Primary | Opens a **web wallet tab** (no extension required). Extension also works. Use **testnet**. Confirm the connection in that tab. |
+| **Meteor Wallet** | Primary | Opens a **web wallet tab** (extension optional). **Switch the network dropdown to Testnet** — it defaults to Mainnet. Confirm in that tab. |
+| **Intear Wallet** | Secondary | Maintained web wallet module (`@near-wallet-selector/intear-wallet`). Good plain-browser alternative. |
 | **HERE Wallet** | Optional | Mobile / QR; listed in the selector modal. |
-| **MyNearWallet** | Retired (last) | Marked deprecated in the selector. Sunset began **2026-10-31**; may refuse new app connections — do not rely on it. |
+| **MyNearWallet** | Retired (last) | Marked deprecated. Sunset began **2026-10-31**; may refuse new app connections — do not rely on it. |
 
-**New accounts need ~1 NEAR** for the Wallet Selector login key (`AddKey`). Get free testnet NEAR from [near-faucet.io](https://near-faucet.io/) or the [official docs faucet](https://docs.near.org/getting-started/faucet). We do not sponsor login keys from the web app.
+**New accounts need ~1 NEAR** for the Wallet Selector login key (`AddKey`). Prefer the [official docs faucet](https://docs.near.org/getting-started/faucet); [near-faucet.io](https://near-faucet.io/) is a fallback. We do not sponsor login keys from the web app.
+
+**Automation note:** Meteor’s web wallet can trip Chrome’s “Debugger paused in another tab” when DevTools/CDP is attached (no `debugger` statements found in `@near-wallet-selector/meteor-wallet` itself). Use a normal browser window for wallet connect, or try Intear.
 
 Gasless withdraw is **not** wired into the web UI (would require shipping relayer secrets). Use the CLI demo instead.
 

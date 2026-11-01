@@ -54,7 +54,7 @@ ok('favicon 200', fav.status === 200, JSON.stringify(fav));
 const judge = await page.locator('[data-i18n="judge_note"]').innerHTML();
 ok(
   'judge faucet note visible',
-  /near-faucet\.io|docs\.near\.org\/getting-started\/faucet/i.test(judge) && /1 NEAR|~1 NEAR/i.test(judge),
+  /docs\.near\.org\/getting-started\/faucet/i.test(judge) && /1 NEAR|~1 NEAR/i.test(judge),
   judge.slice(0, 180),
 );
 
@@ -72,6 +72,8 @@ const mnwIdx = modalHtml.search(/MyNearWallet|My Near Wallet/i);
 const hereIdx = modalHtml.search(/HERE|Here Wallet/i);
 ok('connect opens wallet modal', modalVisible || meteorIdx >= 0, modalHtml.slice(0, 200));
 ok('modal lists Meteor', meteorIdx >= 0);
+const intearIdx = modalHtml.search(/Intear/i);
+ok('modal lists Intear', intearIdx >= 0, `intear@${intearIdx}`);
 ok('modal lists HERE', hereIdx >= 0);
 ok(
   'Meteor listed before MyNearWallet (or MNW absent)',

@@ -1,0 +1,15 @@
+file '01-problem.png'
+duration 10
+file '02-split.png'
+duration 14
+file '03-gasless.png'
+duration 12
+file '04-agent.png'
+duration 10
+file '05-cap.png'
+duration 10
+file '06-web.png'
+duration 12
+file '07-close.png'
+duration 10
+file '07-close.png'

@@ -3,6 +3,7 @@ import { setupModal } from '@near-wallet-selector/modal-ui';
 import { setupMyNearWallet } from '@near-wallet-selector/my-near-wallet';
 import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet';
 import { setupHereWallet } from '@near-wallet-selector/here-wallet';
+import { setupIntearWallet } from '@near-wallet-selector/intear-wallet';
 import { JsonRpcProvider } from '@near-js/providers';
 import { CFG } from './config.js';
 
@@ -122,6 +123,7 @@ export async function initSelector() {
       debug: false,
       modules: [
         setupMeteorWallet(),
+        setupIntearWallet(),
         setupHereWallet(),
         setupMyNearWallet({
           walletUrl: 'https://testnet.mynearwallet.com',
@@ -134,7 +136,7 @@ export async function initSelector() {
       contractId: CFG.house,
       theme: 'dark',
       description:
-        'Bolsillos — NEAR testnet only. Prefer Meteor Wallet (opens a web tab; extension optional). HERE is for mobile. MyNearWallet is retired and may refuse new connections. New accounts need ~1 NEAR for the login key.',
+        'Bolsillos — NEAR testnet only. Prefer Meteor or Intear (web wallets). In Meteor, switch the network dropdown to Testnet (it defaults to Mainnet). HERE is for mobile. MyNearWallet is retired. New accounts need ~1 NEAR for the login key.',
     });
 
     const state = selector.store.getState();
