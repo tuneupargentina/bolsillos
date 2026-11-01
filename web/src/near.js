@@ -80,8 +80,14 @@ function patchConnectingUi() {
   const root = document.getElementById('near-wallet-selector-modal');
   if (!root) return;
   const msg = root.querySelector('.connecting-message span, .connecting-message');
-  if (msg && /extension window|Confirm the connection/i.test(msg.textContent || '')) {
-    msg.textContent = CONNECTING_COPY;
+  if (msg) {
+    const text = msg.textContent || '';
+    // Only rewrite the stock modal copy. CONNECTING_COPY itself contains
+    // "Confirm the connection", so re-applying it on every mutation would
+    // re-fire this observer and freeze the main thread (Meteor / Intear click).
+    if (text !== CONNECTING_COPY && /extension window|Confirm the connection/i.test(text)) {
+      msg.textContent = CONNECTING_COPY;
+    }
   }
   if (root.querySelector('.connecting-wrapper')) {
     ensureCancelButton(root);
@@ -94,8 +100,17 @@ function watchModalDom() {
   if (modalObserver) return;
   const root = document.getElementById('near-wallet-selector-modal');
   if (!root) return;
-  modalObserver = new MutationObserver(() => patchConnectingUi());
-  modalObserver.observe(root, { childList: true, subtree: true, characterData: true });
+  const observeOpts = { childList: true, subtree: true, characterData: true };
+  modalObserver = new MutationObserver(() => {
+    // Disconnect while we mutate so our own DOM writes cannot re-enter.
+    modalObserver.disconnect();
+    try {
+      patchConnectingUi();
+    } finally {
+      modalObserver.observe(root, observeOpts);
+    }
+  });
+  modalObserver.observe(root, observeOpts);
   patchConnectingUi();
 }
 
