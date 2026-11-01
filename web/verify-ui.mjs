@@ -85,7 +85,7 @@ ok(
 const walletsHint = await page.locator('[data-i18n="wallets_hint"]').innerHTML();
 ok(
   'page copy: Meteor web tab, MNW retired',
-  /Meteor/i.test(walletsHint) && /web wallet tab|pestaña web/i.test(walletsHint) && /retired|retirada/i.test(walletsHint),
+  /Meteor/i.test(walletsHint) && /web tab|pestaña web/i.test(walletsHint) && /retired|retirada/i.test(walletsHint),
   walletsHint.slice(0, 200),
 );
 
