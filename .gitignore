@@ -29,8 +29,16 @@ npm-debug.log*
 # Explicit key material
 keys/
 **/keys/
-keys/
 
 # Allow judge-ready wasm artifacts
 !res/
 !res/*.wasm
+!factory/res/
+!factory/res/*.wasm
+
+# Allow committed static web build (GitHub Pages compatible)
+!web/dist/
+!web/dist/**
+
+__pycache__/
+*.pyc

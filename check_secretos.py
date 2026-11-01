@@ -86,18 +86,25 @@ def main():
         for fn in filenames:
             path = os.path.join(dirpath, fn)
             rel = os.path.relpath(path, ROOT)
+            rel_posix = rel.replace("\\", "/")
             nfiles += 1
             for rx, why in FORBIDDEN_FILE:
                 if rx.match(fn):
-                    if why.startswith("compilado .wasm") and rel.replace("\\", "/").startswith("res/"):
+                    if why.startswith("compilado .wasm") and (
+                        rel_posix.startswith("res/") or rel_posix.startswith("factory/res/")
+                    ):
                         continue  # judge-ready artifacts in res/ are allowed
-                    if "node_modules" in rel.replace("\\", "/") or "/target/" in ("/" + rel.replace("\\", "/")):
+                    if "node_modules" in rel_posix or "/target/" in ("/" + rel_posix):
                         continue
                     findings.append((rel, 0, why, fn))
             if os.path.abspath(path) in (SELF, ALLOW_FILE):
                 continue  # el propio script y su lista blanca solo tienen patrones/valores inventados
             if fn.endswith('.log'):
                 continue  # local run logs (gitignored); near-cli prints pubkeys/signatures that look like keys
+            if rel_posix.startswith("web/dist/"):
+                # Committed static build; minified vendor trips email/phone heuristics.
+                permitted.append((rel, 0, "build estático web/dist (vendor omitido del scan)", fn))
+                continue
             try:
                 data = open(path, "rb").read()
             except OSError as e:

@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bolsillos — household USDC pockets on NEAR</title>
-  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="top">
@@ -15,18 +14,35 @@
     <div class="controls">
       <button id="lang-toggle" type="button" aria-label="Language">ES</button>
       <button id="refresh" type="button" data-i18n="refresh">Refresh</button>
+      <button id="btn-connect" type="button" data-i18n="connect">Connect wallet</button>
+      <button id="btn-disconnect" type="button" class="hidden" data-i18n="disconnect">Disconnect</button>
+      <span id="account-badge" class="account-badge hidden"></span>
     </div>
   </header>
 
   <main>
+    <section class="card status-card">
+      <p id="status-line" class="status" data-i18n="status_ready">Ready. Connect a testnet wallet to mint, pay, withdraw, or create a household.</p>
+      <p id="error-line" class="error hidden"></p>
+      <p id="tx-line" class="tx-ok hidden"></p>
+    </section>
+
     <section class="card" id="household-card">
       <h2 data-i18n="household">Household</h2>
+      <div class="row-gap">
+        <label>
+          <span data-i18n="house_input">Household contract</span>
+          <input id="house-input" type="text" spellcheck="false" />
+        </label>
+        <button id="btn-load-house" type="button" data-i18n="load_house">Load</button>
+      </div>
       <dl class="grid">
         <dt data-i18n="contract">Contract</dt><dd id="house-id">—</dd>
         <dt data-i18n="token">Token</dt><dd id="token-id">—</dd>
         <dt data-i18n="owner">Owner</dt><dd id="owner-id">—</dd>
         <dt data-i18n="total">Total received</dt><dd id="total-recv">—</dd>
         <dt data-i18n="timelock">Timelock</dt><dd id="timelock">—</dd>
+        <dt data-i18n="my_musdc">Your mUSDC</dt><dd id="my-musdc">—</dd>
       </dl>
     </section>
 
@@ -42,10 +58,68 @@
               <th data-i18n="col_owner">Owner</th>
               <th data-i18n="col_cap">Daily cap</th>
               <th data-i18n="col_allow">Allowlist</th>
+              <th data-i18n="col_actions">Actions</th>
             </tr>
           </thead>
           <tbody></tbody>
         </table>
+      </div>
+    </section>
+
+    <section class="card actions-card">
+      <h2 data-i18n="actions_title">Signed actions (testnet)</h2>
+      <p class="hint" data-i18n="wallets_hint">Verified wallets: <strong>Meteor Wallet</strong> (extension, primary) and <strong>MyNearWallet</strong> testnet redirect (https://testnet.mynearwallet.com — sunset started Oct 31 2026). HERE Wallet is also listed for mobile. Gasless withdraw stays CLI-only (relayer secrets never ship to the browser).</p>
+
+      <div class="action-grid">
+        <div class="action">
+          <h3 data-i18n="mint_title">Mint demo mUSDC</h3>
+          <p class="hint" data-i18n="mint_hint">Anyone can mint mock USDC to themselves (faucet token).</p>
+          <label><span data-i18n="amount_usdc">Amount (USDC)</span>
+            <input id="mint-amount" type="number" min="1" step="1" value="200" />
+          </label>
+          <button id="btn-mint" type="button" data-i18n="mint_btn">Mint to me</button>
+        </div>
+
+        <div class="action">
+          <h3 data-i18n="pay_title">Pay household</h3>
+          <p class="hint" data-i18n="pay_hint">ft_transfer_call → live pocket split.</p>
+          <label><span data-i18n="amount_usdc">Amount (USDC)</span>
+            <input id="pay-amount" type="number" min="0.000001" step="1" value="200" />
+          </label>
+          <button id="btn-pay" type="button" data-i18n="pay_btn">Pay household</button>
+        </div>
+
+        <div class="action">
+          <h3 data-i18n="withdraw_title">Withdraw from my pocket</h3>
+          <p class="hint" data-i18n="withdraw_hint">Must be pocket owner; recipient must be allowlisted. Contract panics surface below.</p>
+          <label><span data-i18n="pocket_id">Pocket id</span>
+            <input id="wd-pocket" type="text" value="spend" spellcheck="false" />
+          </label>
+          <label><span data-i18n="amount_usdc">Amount (USDC)</span>
+            <input id="wd-amount" type="number" min="0.000001" step="1" value="1" />
+          </label>
+          <label><span data-i18n="recipient">Recipient</span>
+            <input id="wd-recipient" type="text" spellcheck="false" placeholder="you.testnet" />
+          </label>
+          <button id="btn-withdraw" type="button" data-i18n="withdraw_btn">Withdraw</button>
+        </div>
+
+        <div class="action">
+          <h3 data-i18n="propose_title">Propose rule change</h3>
+          <p class="hint" data-i18n="propose_hint">Owner only. Demo: keep current shares (noop proposal) or paste JSON PocketInput[].</p>
+          <textarea id="propose-json" rows="4" spellcheck="false" placeholder='[{"id":"spend","share_bps":4000,"owner":"…","allowlist":["…"],"daily_cap":"0"}, …]'></textarea>
+          <button id="btn-propose" type="button" data-i18n="propose_btn">Propose</button>
+          <button id="btn-execute-proposal" type="button" data-i18n="execute_btn">Execute proposal</button>
+        </div>
+
+        <div class="action">
+          <h3 data-i18n="factory_title">Create household (factory)</h3>
+          <p class="hint" data-i18n="factory_hint">Deploys &lt;name&gt;.b575-factory.testnet with you as owner. Attach ~3 NEAR.</p>
+          <label><span data-i18n="hh_name">Name (a-z 0-9 - _)</span>
+            <input id="factory-name" type="text" spellcheck="false" placeholder="myhome" />
+          </label>
+          <button id="btn-create-hh" type="button" data-i18n="create_hh_btn">Create household</button>
+        </div>
       </div>
     </section>
 
@@ -64,9 +138,9 @@
     <section class="card">
       <h2 data-i18n="try_title">Try it</h2>
       <ol class="steps">
-        <li data-i18n="try1">Clone the repo and open this folder with any static server (<code>python3 -m http.server 8080</code> in <code>web/</code>).</li>
-        <li data-i18n="try2">Or open <code>index.html</code> directly — it reads public testnet RPC, no wallet needed to view.</li>
-        <li data-i18n="try3">Toggle EN/ES with the button in the header (choice saved in localStorage).</li>
+        <li data-i18n="try1">Dev: <code>cd web && npm install && npm run dev</code> → http://127.0.0.1:8080</li>
+        <li data-i18n="try2">Static (GitHub Pages): serve <code>web/dist/</code> (<code>python3 -m http.server 8080</code> inside dist).</li>
+        <li data-i18n="try3">Toggle EN/ES with the header button (saved in localStorage). Connect Meteor or MyNearWallet testnet.</li>
       </ol>
     </section>
   </main>
@@ -75,8 +149,6 @@
     <p data-i18n="footer">Built for the NEAR Hackathon · tracks: Real-World Money, Open Innovation, AI Security &amp; Defense · sister project: Tune Up Research Desk</p>
   </footer>
 
-  <script src="config.js"></script>
-  <script src="i18n.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>

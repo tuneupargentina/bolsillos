@@ -49,13 +49,17 @@ impl Contract {
         }
     }
 
+    /// Demo faucet: anyone may mint to **themselves** (cap 1_000 USDC / call).
+    /// Owner may still mint to any account (e2e / ops).
     pub fn mint(&mut self, account_id: AccountId, amount: U128) {
-        require!(
-            env::predecessor_account_id() == self.owner,
-            "only owner can mint"
-        );
+        let pred = env::predecessor_account_id();
         let amount = amount.0;
         require!(amount > 0, "amount must be > 0");
+        const MAX_FAUCET: u128 = 1_000_000_000; // 1000 USDC (6 decimals)
+        if pred != self.owner {
+            require!(account_id == pred, "faucet: mint only to yourself");
+            require!(amount <= MAX_FAUCET, "faucet: max 1000 USDC per call");
+        }
         let bal = self.balances.get(&account_id).copied().unwrap_or(0);
         self.balances.insert(account_id, bal + amount);
         self.total_supply = self.total_supply.saturating_add(amount);
@@ -215,12 +219,21 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "only owner can mint")]
-    fn non_owner_cannot_mint() {
+    fn faucet_self_mint() {
         ctx(aid("owner.test.near"), 0);
         let mut c = Contract::new(aid("owner.test.near"));
-        ctx(aid("other.test.near"), 0);
-        c.mint(aid("other.test.near"), U128(1));
+        ctx(aid("alice.test.near"), 0);
+        c.mint(aid("alice.test.near"), U128(5_000_000));
+        assert_eq!(c.ft_balance_of(aid("alice.test.near")).0, 5_000_000);
+    }
+
+    #[test]
+    #[should_panic(expected = "faucet: mint only to yourself")]
+    fn faucet_cannot_mint_to_other() {
+        ctx(aid("owner.test.near"), 0);
+        let mut c = Contract::new(aid("owner.test.near"));
+        ctx(aid("alice.test.near"), 0);
+        c.mint(aid("bob.test.near"), U128(1));
     }
 
     #[test]
