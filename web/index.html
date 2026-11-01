@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bolsillos — household USDC pockets on NEAR</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>Bolsillos</h1>
+      <p class="tagline" data-i18n="tagline">("pockets"): every USDC payment splits itself into household pockets</p>
+    </div>
+    <div class="controls">
+      <button id="lang-toggle" type="button" aria-label="Language">ES</button>
+      <button id="refresh" type="button" data-i18n="refresh">Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" id="household-card">
+      <h2 data-i18n="household">Household</h2>
+      <dl class="grid">
+        <dt data-i18n="contract">Contract</dt><dd id="house-id">—</dd>
+        <dt data-i18n="token">Token</dt><dd id="token-id">—</dd>
+        <dt data-i18n="owner">Owner</dt><dd id="owner-id">—</dd>
+        <dt data-i18n="total">Total received</dt><dd id="total-recv">—</dd>
+        <dt data-i18n="timelock">Timelock</dt><dd id="timelock">—</dd>
+      </dl>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="pockets">Pockets</h2>
+      <div class="table-wrap">
+        <table id="pockets-table">
+          <thead>
+            <tr>
+              <th data-i18n="col_id">Id</th>
+              <th data-i18n="col_share">Share</th>
+              <th data-i18n="col_balance">Balance</th>
+              <th data-i18n="col_owner">Owner</th>
+              <th data-i18n="col_cap">Daily cap</th>
+              <th data-i18n="col_allow">Allowlist</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="demo_title">Demo storyline</h2>
+      <ol class="steps">
+        <li data-i18n="step1">Pay 200 mUSDC into the household → it splits 40/25/15/10/10 (spend / rent / mom / taxes / savings).</li>
+        <li data-i18n="step2">Mom withdraws 10 mUSDC to her destination account (gasless via the relayer).</li>
+        <li data-i18n="step3">The agent tries to drain savings and is blocked (not the pocket owner; FC key limited).</li>
+        <li data-i18n="step4">Even the household owner cannot pull more than the savings daily cap.</li>
+      </ol>
+      <p class="hint" data-i18n="demo_hint">Run <code>bash scripts/e2e.sh</code> to reproduce on testnet. Links below are from the last recorded run.</p>
+      <ul id="tx-links" class="tx-links"></ul>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="try_title">Try it</h2>
+      <ol class="steps">
+        <li data-i18n="try1">Clone the repo and open this folder with any static server (<code>python3 -m http.server 8080</code> in <code>web/</code>).</li>
+        <li data-i18n="try2">Or open <code>index.html</code> directly — it reads public testnet RPC, no wallet needed to view.</li>
+        <li data-i18n="try3">Toggle EN/ES with the button in the header (choice saved in localStorage).</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p data-i18n="footer">Built for the NEAR Hackathon · tracks: Real-World Money, Open Innovation, AI Security &amp; Defense · sister project: Tune Up Research Desk</p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

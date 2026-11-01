@@ -1,0 +1,36 @@
+# Rust / NEAR builds
+target/
+**/target/
+*.wasm
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Secrets: never commit keys, seeds or env files
+.env
+.env.*
+*.key
+*.pem
+.near-credentials/
+**/.near-credentials/
+**/near-credentials/
+*credentials*.json
+*.seed
+*seed-phrase*
+
+# Local / OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.log
+*.zip
+
+# Explicit key material
+keys/
+**/keys/
+keys/
+
+# Allow judge-ready wasm artifacts
+!res/
+!res/*.wasm
