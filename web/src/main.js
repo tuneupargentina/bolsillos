@@ -19,17 +19,20 @@ import {
 
 let currentHouse = CFG.house;
 let lastHousehold = null;
+let selectorReady = false;
 
 function $(id) {
   return document.getElementById(id);
 }
 
 function setStatus(msg) {
-  $('status-line').textContent = msg;
+  const el = $('status-line');
+  if (el) el.textContent = msg;
 }
 
 function setError(msg) {
   const el = $('error-line');
+  if (!el) return;
   if (!msg) {
     el.classList.add('hidden');
     el.textContent = '';
@@ -41,6 +44,7 @@ function setError(msg) {
 
 function setTxOk(hash) {
   const el = $('tx-line');
+  if (!el) return;
   if (!hash) {
     el.classList.add('hidden');
     el.innerHTML = '';
@@ -48,6 +52,37 @@ function setTxOk(hash) {
   }
   el.innerHTML = `${t('tx_ok')}: <a href="${CFG.explorerTx(hash)}" target="_blank" rel="noopener">${hash.slice(0, 12)}…</a>`;
   el.classList.remove('hidden');
+}
+
+/** Visible toast next to (or under) the control that triggered the action. */
+function toast(anchorEl, message, kind = 'info') {
+  const host =
+    (anchorEl && (anchorEl.closest('.action') || anchorEl.closest('.controls') || anchorEl.parentElement)) ||
+    $('status-card-host') ||
+    document.body;
+  let el = host.querySelector(':scope > .toast-msg');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'toast-msg';
+    el.setAttribute('role', 'status');
+    host.appendChild(el);
+  }
+  el.className = `toast-msg toast-${kind}`;
+  el.textContent = message;
+  el.classList.remove('hidden');
+  // Also mirror into the top status/error so it is never missed.
+  if (kind === 'error') {
+    setError(message);
+    setStatus(message);
+  } else {
+    setError('');
+    setStatus(message);
+  }
+  clearTimeout(el._hide);
+  el._hide = setTimeout(() => {
+    el.classList.add('hidden');
+  }, 8000);
+  return el;
 }
 
 function updateAccountUi() {
@@ -70,6 +105,7 @@ function updateAccountUi() {
 
 function renderTxLinks() {
   const ul = $('tx-links');
+  if (!ul) return;
   ul.innerHTML = '';
   for (const tx of CFG.demoTxs) {
     const li = document.createElement('li');
@@ -145,41 +181,68 @@ async function withBusy(btn, fn) {
   const prev = btn?.disabled;
   if (btn) btn.disabled = true;
   try {
+    toast(btn, t('working'), 'info');
     const outcome = await fn();
     const hash = txHashFromOutcome(outcome);
-    if (hash) setTxOk(hash);
+    if (hash) {
+      setTxOk(hash);
+      toast(btn, `${t('tx_ok')}: ${hash.slice(0, 10)}…`, 'ok');
+    } else {
+      toast(btn, t('tx_ok'), 'ok');
+    }
     await loadHousehold();
     return outcome;
   } catch (e) {
     console.error(e);
-    setError(extractError(e));
+    const msg = extractError(e);
+    toast(btn, msg, 'error');
   } finally {
     if (btn) btn.disabled = prev;
   }
 }
 
-function requireWallet() {
+function requireWallet(anchor) {
   if (!getAccountId()) {
-    setError(t('need_wallet'));
-    openModal();
+    const msg = t('need_wallet');
+    toast(anchor || $('btn-connect'), msg, 'error');
+    tryOpenConnect(anchor);
     return false;
   }
   return true;
 }
 
+function tryOpenConnect(anchor) {
+  try {
+    if (!selectorReady) {
+      toast(anchor || $('btn-connect'), t('wallet_loading'), 'info');
+      return;
+    }
+    openModal();
+  } catch (e) {
+    toast(anchor || $('btn-connect'), extractError(e), 'error');
+  }
+}
+
 function wire() {
   $('lang-toggle').addEventListener('click', () => {
-    setLang(getLang() === 'en' ? 'es' : 'en');
+    const next = getLang() === 'en' ? 'es' : 'en';
+    setLang(next);
     applyI18n();
     renderTxLinks();
     loadHousehold();
+    toast($('lang-toggle'), next === 'es' ? 'Idioma: español' : 'Language: English', 'ok');
   });
   $('refresh').addEventListener('click', () => loadHousehold());
-  $('btn-connect').addEventListener('click', () => openModal());
+  $('btn-connect').addEventListener('click', () => tryOpenConnect($('btn-connect')));
   $('btn-disconnect').addEventListener('click', async () => {
-    await signOut();
-    updateAccountUi();
-    loadHousehold();
+    try {
+      await signOut();
+      updateAccountUi();
+      loadHousehold();
+      toast($('btn-disconnect'), t('disconnected'), 'ok');
+    } catch (e) {
+      toast($('btn-disconnect'), extractError(e), 'error');
+    }
   });
   $('btn-load-house').addEventListener('click', () => {
     const v = $('house-input').value.trim();
@@ -190,7 +253,7 @@ function wire() {
   });
 
   $('btn-mint').addEventListener('click', () => {
-    if (!requireWallet()) return;
+    if (!requireWallet($('btn-mint'))) return;
     withBusy($('btn-mint'), async () => {
       const atomic = usdcToAtomic($('mint-amount').value);
       return mintToMe(atomic);
@@ -198,7 +261,7 @@ function wire() {
   });
 
   $('btn-pay').addEventListener('click', () => {
-    if (!requireWallet()) return;
+    if (!requireWallet($('btn-pay'))) return;
     withBusy($('btn-pay'), async () => {
       const atomic = usdcToAtomic($('pay-amount').value);
       return payHousehold(currentHouse, atomic);
@@ -206,7 +269,7 @@ function wire() {
   });
 
   $('btn-withdraw').addEventListener('click', () => {
-    if (!requireWallet()) return;
+    if (!requireWallet($('btn-withdraw'))) return;
     withBusy($('btn-withdraw'), async () => {
       const atomic = usdcToAtomic($('wd-amount').value);
       const pocket = $('wd-pocket').value.trim();
@@ -216,7 +279,7 @@ function wire() {
   });
 
   $('btn-propose').addEventListener('click', () => {
-    if (!requireWallet()) return;
+    if (!requireWallet($('btn-propose'))) return;
     withBusy($('btn-propose'), async () => {
       let pockets;
       const raw = $('propose-json').value.trim();
@@ -238,12 +301,12 @@ function wire() {
   });
 
   $('btn-execute-proposal').addEventListener('click', () => {
-    if (!requireWallet()) return;
+    if (!requireWallet($('btn-execute-proposal'))) return;
     withBusy($('btn-execute-proposal'), async () => executeRuleChange(currentHouse));
   });
 
   $('btn-create-hh').addEventListener('click', () => {
-    if (!requireWallet()) return;
+    if (!requireWallet($('btn-create-hh'))) return;
     withBusy($('btn-create-hh'), async () => {
       const name = $('factory-name').value.trim().toLowerCase();
       const outcome = await createHousehold(name, CFG.musdc);
@@ -260,17 +323,25 @@ function wire() {
 }
 
 async function boot() {
+  // Wire UI first so lang toggle / feedback work even if wallet init fails.
   applyI18n();
   wire();
   $('house-input').value = currentHouse;
+  setStatus(t('status_ready'));
+
   try {
     await initSelector();
+    selectorReady = true;
   } catch (e) {
     console.error('selector init', e);
-    setError(extractError(e));
+    selectorReady = false;
+    toast($('btn-connect'), `${t('wallet_init_fail')}: ${extractError(e)}`, 'error');
   }
   updateAccountUi();
   await loadHousehold();
 }
 
-boot();
+boot().catch((e) => {
+  console.error('boot failed', e);
+  setError(extractError(e));
+});

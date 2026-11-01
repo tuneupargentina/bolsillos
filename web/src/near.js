@@ -1,7 +1,7 @@
 import { setupWalletSelector, actionCreators } from '@near-wallet-selector/core';
 import { setupModal } from '@near-wallet-selector/modal-ui';
-import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet';
 import { setupMyNearWallet } from '@near-wallet-selector/my-near-wallet';
+import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet';
 import { setupHereWallet } from '@near-wallet-selector/here-wallet';
 import { JsonRpcProvider } from '@near-js/providers';
 import { CFG } from './config.js';
@@ -13,48 +13,68 @@ const { functionCall } = actionCreators;
 let selector = null;
 let modal = null;
 let accountId = null;
+let initError = null;
 const provider = new JsonRpcProvider({ url: CFG.rpc });
 
 const TGAS = (n) => BigInt(n) * 1_000_000_000_000n;
 const ONE_YOCTO = 1n;
 
 export async function initSelector() {
-  selector = await setupWalletSelector({
-    network: 'testnet',
-    debug: false,
-    modules: [
-      setupMeteorWallet(),
-      setupMyNearWallet({
-        walletUrl: 'https://testnet.mynearwallet.com',
-      }),
-      setupHereWallet(),
-    ],
-  });
+  initError = null;
+  try {
+    // MyNearWallet first: works in a plain browser (redirect, no extension).
+    selector = await setupWalletSelector({
+      network: 'testnet',
+      debug: false,
+      modules: [
+        setupMyNearWallet({
+          walletUrl: 'https://testnet.mynearwallet.com',
+        }),
+        setupMeteorWallet(),
+        setupHereWallet(),
+      ],
+    });
 
-  modal = setupModal(selector, {
-    contractId: CFG.house,
-    theme: 'dark',
-    description: 'Bolsillos — testnet only. Prefer Meteor; MyNearWallet testnet still works during sunset.',
-  });
+    modal = setupModal(selector, {
+      contractId: CFG.house,
+      theme: 'dark',
+      description:
+        'Bolsillos — NEAR testnet only. MyNearWallet works without an extension; Meteor needs the extension; HERE is for mobile.',
+    });
 
-  const state = selector.store.getState();
-  if (state.accounts.length > 0) {
-    accountId = state.accounts[0].accountId;
+    const state = selector.store.getState();
+    if (state.accounts.length > 0) {
+      accountId = state.accounts[0].accountId;
+    }
+
+    selector.store.observable.subscribe((next) => {
+      accountId = next.accounts[0]?.accountId ?? null;
+      window.dispatchEvent(new CustomEvent('bolsillos:account', { detail: { accountId } }));
+    });
+
+    return { selector, modal, accountId };
+  } catch (e) {
+    initError = e;
+    throw e;
   }
+}
 
-  selector.store.observable.subscribe((next) => {
-    accountId = next.accounts[0]?.accountId ?? null;
-    window.dispatchEvent(new CustomEvent('bolsillos:account', { detail: { accountId } }));
-  });
-
-  return { selector, modal, accountId };
+export function getInitError() {
+  return initError;
 }
 
 export function openModal() {
-  modal?.show();
+  if (!modal) {
+    const msg = initError
+      ? `Wallet selector failed to start: ${extractError(initError)}`
+      : 'Wallet selector is not ready yet. Wait a moment and try again.';
+    throw new Error(msg);
+  }
+  modal.show();
 }
 
 export async function signOut() {
+  if (!selector) return;
   const wallet = await selector.wallet();
   await wallet.signOut();
   accountId = null;
@@ -82,7 +102,6 @@ export async function viewCall(contractId, method, args = {}) {
 export function extractError(err) {
   if (!err) return 'Unknown error';
   const msg = err.message || String(err);
-  // Common near / selector shapes
   const candidates = [
     err?.kind?.ExecutionError,
     err?.type,
@@ -93,7 +112,9 @@ export function extractError(err) {
   const panic =
     blob.match(/Smart contract panicked[:\s]+(.+?)(?:\\n|"|$)/i) ||
     blob.match(/ExecutionError["':\s]+([^"}\n]+)/i) ||
-    blob.match(/(only pocket owner can withdraw|recipient not allowlisted|exceeds daily cap|not the household owner|household name already taken|insufficient deposit|shares must sum)/i);
+    blob.match(
+      /(only pocket owner can withdraw|recipient not allowlisted|exceeds daily cap|not the household owner|household name already taken|insufficient deposit|shares must sum|Wallet selector)/i,
+    );
   if (panic) return (panic[1] || panic[0]).trim();
   if (msg.length > 280) return `${msg.slice(0, 280)}…`;
   return msg;
@@ -102,11 +123,10 @@ export function extractError(err) {
 async function send(receiverId, actions) {
   if (!accountId) throw new Error('not signed in');
   const wallet = await selector.wallet();
-  const outcome = await wallet.signAndSendTransaction({
+  return wallet.signAndSendTransaction({
     receiverId,
     actions,
   });
-  return outcome;
 }
 
 export async function mintToMe(amountAtomic) {
