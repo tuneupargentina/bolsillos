@@ -1,0 +1,27 @@
+1
+00:00:05,000 --> 00:00:17,000
+200 USDC payment splits into 5 household pockets in one transaction
+
+2
+00:00:17,000 --> 00:00:26,000
+Explorer confirms the atomic pay-and-split on NEAR testnet
+
+3
+00:00:26,000 --> 00:00:36,000
+Mom withdraws her pocket gasless via relayer (no NEAR)
+
+4
+00:00:36,000 --> 00:00:45,000
+Relayer pays the gas; withdraw_pocket lands on-chain
+
+5
+00:00:45,000 --> 00:00:55,000
+Agent can't drain savings; daily cap blocks over-limit withdraws
+
+6
+00:00:55,000 --> 00:01:07,000
+Web UI: pockets table, EN/ES toggle, and Connect wallet
+
+7
+00:01:07,000 --> 00:01:17,000
+Factory household demo.b575-factory.testnet loads in the UI
