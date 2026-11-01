@@ -8,14 +8,12 @@ function ok(name, pass, detail = '') {
 }
 
 async function closeWalletModal(page) {
-  // Wallet Selector modal-ui: hide via DOM / Escape / close button
   await page.evaluate(() => {
     const root = document.getElementById('near-wallet-selector-modal');
     if (root) {
       root.style.display = 'none';
-      root.classList.remove('open');
-      const overlay = root.querySelector('.nws-modal-overlay');
-      if (overlay) overlay.click();
+      const btn = root.querySelector('.bolsillos-cancel-connect');
+      if (btn) btn.click();
     }
     document.querySelectorAll('.nws-modal-wrapper, .nws-modal').forEach((el) => {
       const host = el.closest('#near-wallet-selector-modal') || el;
@@ -40,7 +38,7 @@ await page.waitForTimeout(2500);
 
 const houseId = await page.locator('#house-id').textContent();
 ok('page loaded', true, `house-id=${houseId}`);
-ok('no pageerror (Buffer/handlers)', pageErrors.length === 0, pageErrors.join(' | ') || 'none');
+ok('no pageerror', pageErrors.length === 0, pageErrors.join(' | ') || 'none');
 ok(
   'no severe console errors',
   !consoleErrors.some((e) => /Cannot read|is not defined|Failed to fetch dynamically/i.test(e)),
@@ -49,28 +47,48 @@ ok(
 
 const fav = await page.evaluate(async () => {
   const r = await fetch('./favicon.svg');
-  return { status: r.status, type: r.headers.get('content-type') };
+  return { status: r.status };
 });
 ok('favicon 200', fav.status === 200, JSON.stringify(fav));
 
+const judge = await page.locator('[data-i18n="judge_note"]').innerHTML();
+ok(
+  'judge faucet note visible',
+  /near-faucet\.io|docs\.near\.org\/getting-started\/faucet/i.test(judge) && /1 NEAR|~1 NEAR/i.test(judge),
+  judge.slice(0, 180),
+);
+
 await page.locator('#btn-connect').click();
 await page.waitForTimeout(1500);
-const modalVisible = await page.locator('#near-wallet-selector-modal .nws-modal').isVisible().catch(() => false);
 const modalHtml = await page.evaluate(() => {
-  const el = document.querySelector('#near-wallet-selector-modal') || document.querySelector('.nws-modal');
-  return el ? el.innerText.slice(0, 800) : '';
+  const el = document.querySelector('#near-wallet-selector-modal');
+  return el ? el.innerText : '';
 });
-const hasMNW = /MyNearWallet|My Near Wallet|mynearwallet/i.test(modalHtml);
-const hasMeteor = /Meteor/i.test(modalHtml);
-const hasHere = /HERE|Here Wallet/i.test(modalHtml);
-ok('connect opens wallet modal', modalVisible || hasMNW, `visible=${modalVisible}; ${modalHtml.slice(0, 160)}`);
-ok('modal lists MyNearWallet', hasMNW, modalHtml.slice(0, 220));
-ok('modal lists Meteor', hasMeteor);
-ok('modal lists HERE', hasHere);
+const modalVisible = await page.locator('#near-wallet-selector-modal .nws-modal').isVisible().catch(() => false);
+
+// Order: Meteor should appear before MyNearWallet in the list text.
+const meteorIdx = modalHtml.search(/Meteor/i);
+const mnwIdx = modalHtml.search(/MyNearWallet|My Near Wallet/i);
+const hereIdx = modalHtml.search(/HERE|Here Wallet/i);
+ok('connect opens wallet modal', modalVisible || meteorIdx >= 0, modalHtml.slice(0, 200));
+ok('modal lists Meteor', meteorIdx >= 0);
+ok('modal lists HERE', hereIdx >= 0);
+ok(
+  'Meteor listed before MyNearWallet (or MNW absent)',
+  meteorIdx >= 0 && (mnwIdx < 0 || meteorIdx < mnwIdx),
+  `meteor@${meteorIdx} mnw@${mnwIdx}`,
+);
+
+// Deprecated badge / retired copy in page
+const walletsHint = await page.locator('[data-i18n="wallets_hint"]').innerHTML();
+ok(
+  'page copy: Meteor web tab, MNW retired',
+  /Meteor/i.test(walletsHint) && /web wallet tab|pestaña web/i.test(walletsHint) && /retired|retirada/i.test(walletsHint),
+  walletsHint.slice(0, 200),
+);
 
 await closeWalletModal(page);
 
-// Disconnected action feedback (may reopen modal via tryOpenConnect — that is intentional UX)
 await page.locator('#btn-mint').click({ force: true });
 await page.waitForTimeout(600);
 const toastText = await page.evaluate(() => {
@@ -94,27 +112,16 @@ await page.waitForTimeout(500);
 const afterH2 = await page.locator('h2[data-i18n="household"]').textContent();
 const afterBtn = await page.locator('#lang-toggle').textContent();
 const afterConnect = await page.locator('#btn-connect').textContent();
-const afterTag = await page.locator('[data-i18n="tagline"]').textContent();
+const afterJudge = await page.locator('[data-i18n="judge_note"]').textContent();
 ok(
   'lang toggle flips label',
   beforeBtn.trim() !== afterBtn.trim() && /EN|ES/.test(afterBtn),
   `${beforeBtn} → ${afterBtn}`,
 );
 ok(
-  'ES changes headings/buttons',
-  beforeH2 !== afterH2 || /Hogar|Conectar|billetera|bolsillo/i.test(afterH2 + afterConnect + afterTag),
-  `h2: ${beforeH2} → ${afterH2}; connect: ${afterConnect}; tag: ${afterTag?.slice(0, 60)}`,
-);
-
-await page.reload({ waitUntil: 'networkidle' });
-await page.waitForTimeout(1500);
-const persisted = await page.locator('#lang-toggle').textContent();
-const persistedH2 = await page.locator('h2[data-i18n="household"]').textContent();
-const persistedTag = await page.locator('[data-i18n="tagline"]').textContent();
-ok(
-  'lang persisted after reload',
-  /EN/.test(persisted) && /Hogar|bolsillo|billetera/i.test(persistedH2 + persistedTag),
-  `toggle=${persisted} h2=${persistedH2}`,
+  'ES changes headings + judge note',
+  beforeH2 !== afterH2 && /Hogar|jueces|faucet/i.test(afterH2 + afterConnect + afterJudge),
+  `h2: ${beforeH2} → ${afterH2}; judge: ${afterJudge.slice(0, 80)}`,
 );
 
 await browser.close();

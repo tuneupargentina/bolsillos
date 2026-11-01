@@ -92,3 +92,36 @@ textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 0.85rem
 .toast-error { color: var(--err); border-color: color-mix(in srgb, var(--err) 40%, var(--line)); }
 .controls .toast-msg { width: 100%; flex-basis: 100%; }
 .status-card .toast-msg { margin-top: 0.35rem; }
+
+.judge-note {
+  margin: 0.75rem 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #f0c14b 45%, var(--line));
+  background: color-mix(in srgb, #f0c14b 12%, #0b1016);
+  color: #f6e7b2;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.judge-note a { color: #ffe08a; text-decoration: underline; }
+
+/* Injected into Wallet Selector connecting pane */
+.bolsillos-cancel-connect {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--line, #334);
+  background: #1a222d;
+  color: #e8eef7;
+  cursor: pointer;
+  font: inherit;
+}
+.bolsillos-cancel-connect:hover { filter: brightness(1.08); }
+#near-wallet-selector-modal .connecting-message {
+  max-width: 28rem;
+  text-align: center;
+  line-height: 1.35;
+}

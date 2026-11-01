@@ -69,7 +69,8 @@
 
     <section class="card actions-card">
       <h2 data-i18n="actions_title">Signed actions (testnet)</h2>
-      <p class="hint" data-i18n="wallets_hint">Verified wallets: <strong>Meteor Wallet</strong> (extension, primary) and <strong>MyNearWallet</strong> testnet redirect (https://testnet.mynearwallet.com — sunset started Oct 31 2026). HERE Wallet is also listed for mobile. Gasless withdraw stays CLI-only (relayer secrets never ship to the browser).</p>
+      <p class="hint" data-i18n="wallets_hint">Verified for judges: <strong>Meteor Wallet</strong> first (opens a <em>web wallet tab</em>; browser extension optional) and <strong>HERE</strong> (mobile). <strong>MyNearWallet</strong> is listed last as <em>retired</em> — it may refuse new app connections. Gasless withdraw stays CLI-only (relayer secrets never ship to the browser).</p>
+      <p class="judge-note" data-i18n="judge_note">Judge note: new testnet accounts need ~1 NEAR to add the app login key. Get free testnet NEAR from the <a href="https://near-faucet.io/" target="_blank" rel="noopener">NEAR testnet faucet</a> or the <a href="https://docs.near.org/getting-started/faucet" target="_blank" rel="noopener">official docs faucet</a>, then retry Connect. Meteor opens a wallet tab — confirm there (not in an extension).</p>
 
       <div class="action-grid">
         <div class="action">
@@ -141,7 +142,7 @@
       <ol class="steps">
         <li data-i18n="try1">Dev: <code>cd web && npm install && npm run dev</code> → http://127.0.0.1:8080</li>
         <li data-i18n="try2">Static (GitHub Pages): serve <code>web/dist/</code> (<code>python3 -m http.server 8080</code> inside dist).</li>
-        <li data-i18n="try3">Toggle EN/ES with the header button (saved in localStorage). Connect Meteor or MyNearWallet testnet.</li>
+        <li data-i18n="try3">Toggle EN/ES with the header button (saved in localStorage). Connect with <strong>Meteor Wallet</strong> (web tab). New accounts need ~1 NEAR — see the faucet note above.</li>
       </ol>
     </section>
   </main>

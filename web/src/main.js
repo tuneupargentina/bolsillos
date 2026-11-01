@@ -320,6 +320,10 @@ function wire() {
     updateAccountUi();
     loadHousehold();
   });
+  window.addEventListener('bolsillos:connect-timeout', (ev) => {
+    const msg = ev.detail?.message || t('connect_timeout');
+    toast($('btn-connect'), msg, 'error');
+  });
 }
 
 async function boot() {

@@ -14,24 +14,119 @@ let selector = null;
 let modal = null;
 let accountId = null;
 let initError = null;
+let connectWatchdog = null;
+let modalObserver = null;
+const CONNECT_TIMEOUT_MS = 90_000;
 const provider = new JsonRpcProvider({ url: CFG.rpc });
 
 const TGAS = (n) => BigInt(n) * 1_000_000_000_000n;
 const ONE_YOCTO = 1n;
 
+const CONNECTING_COPY =
+  'Confirm the connection in the wallet tab / window that just opened (Meteor opens a web wallet — no extension required). If the wallet shows an error (e.g. zero balance), cancel here, fund the account, and try again.';
+
+function clearConnectWatchdog() {
+  if (connectWatchdog) {
+    clearTimeout(connectWatchdog);
+    connectWatchdog = null;
+  }
+}
+
+function fireConnectTimeout() {
+  window.dispatchEvent(
+    new CustomEvent('bolsillos:connect-timeout', {
+      detail: {
+        message:
+          'Wallet connection timed out or was cancelled. New testnet accounts need ~1 NEAR for the login key — use the faucet, then retry Connect.',
+      },
+    }),
+  );
+}
+
+function startConnectWatchdog() {
+  clearConnectWatchdog();
+  connectWatchdog = setTimeout(() => {
+    connectWatchdog = null;
+    if (accountId) return;
+    try {
+      modal?.hide();
+    } catch {
+      /* ignore */
+    }
+    fireConnectTimeout();
+  }, CONNECT_TIMEOUT_MS);
+}
+
+function ensureCancelButton(root) {
+  const details = root.querySelector('.connecting-details');
+  if (!details) return;
+  let btn = details.querySelector('.bolsillos-cancel-connect');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bolsillos-cancel-connect';
+    btn.textContent = 'Cancel / close';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      cancelPendingConnect('Cancelled wallet connection.');
+    });
+    details.appendChild(btn);
+  }
+}
+
+function patchConnectingUi() {
+  const root = document.getElementById('near-wallet-selector-modal');
+  if (!root) return;
+  const msg = root.querySelector('.connecting-message span, .connecting-message');
+  if (msg && /extension window|Confirm the connection/i.test(msg.textContent || '')) {
+    msg.textContent = CONNECTING_COPY;
+  }
+  if (root.querySelector('.connecting-wrapper')) {
+    ensureCancelButton(root);
+    // Keep watchdog armed while the spinner is visible.
+    if (!connectWatchdog && !accountId) startConnectWatchdog();
+  }
+}
+
+function watchModalDom() {
+  if (modalObserver) return;
+  const root = document.getElementById('near-wallet-selector-modal');
+  if (!root) return;
+  modalObserver = new MutationObserver(() => patchConnectingUi());
+  modalObserver.observe(root, { childList: true, subtree: true, characterData: true });
+  patchConnectingUi();
+}
+
+export function cancelPendingConnect(reason) {
+  clearConnectWatchdog();
+  try {
+    modal?.hide();
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(
+    new CustomEvent('bolsillos:connect-timeout', {
+      detail: { message: reason || 'Cancelled wallet connection.' },
+    }),
+  );
+}
+
 export async function initSelector() {
   initError = null;
   try {
-    // MyNearWallet first: works in a plain browser (redirect, no extension).
+    // Meteor first: web wallet handoff works without an extension.
+    // MyNearWallet last + deprecated — retired, may refuse new app connections.
     selector = await setupWalletSelector({
       network: 'testnet',
       debug: false,
       modules: [
-        setupMyNearWallet({
-          walletUrl: 'https://testnet.mynearwallet.com',
-        }),
         setupMeteorWallet(),
         setupHereWallet(),
+        setupMyNearWallet({
+          walletUrl: 'https://testnet.mynearwallet.com',
+          deprecated: true,
+        }),
       ],
     });
 
@@ -39,7 +134,7 @@ export async function initSelector() {
       contractId: CFG.house,
       theme: 'dark',
       description:
-        'Bolsillos — NEAR testnet only. MyNearWallet works without an extension; Meteor needs the extension; HERE is for mobile.',
+        'Bolsillos — NEAR testnet only. Prefer Meteor Wallet (opens a web tab; extension optional). HERE is for mobile. MyNearWallet is retired and may refuse new connections. New accounts need ~1 NEAR for the login key.',
     });
 
     const state = selector.store.getState();
@@ -49,8 +144,12 @@ export async function initSelector() {
 
     selector.store.observable.subscribe((next) => {
       accountId = next.accounts[0]?.accountId ?? null;
+      if (accountId) clearConnectWatchdog();
       window.dispatchEvent(new CustomEvent('bolsillos:account', { detail: { accountId } }));
     });
+
+    // Modal root is injected on first show; also try now.
+    queueMicrotask(watchModalDom);
 
     return { selector, modal, accountId };
   } catch (e) {
@@ -71,9 +170,15 @@ export function openModal() {
     throw new Error(msg);
   }
   modal.show();
+  watchModalDom();
+  startConnectWatchdog();
+  // Patch after React paints the connecting route.
+  setTimeout(patchConnectingUi, 50);
+  setTimeout(patchConnectingUi, 300);
 }
 
 export async function signOut() {
+  clearConnectWatchdog();
   if (!selector) return;
   const wallet = await selector.wallet();
   await wallet.signOut();
@@ -113,7 +218,7 @@ export function extractError(err) {
     blob.match(/Smart contract panicked[:\s]+(.+?)(?:\\n|"|$)/i) ||
     blob.match(/ExecutionError["':\s]+([^"}\n]+)/i) ||
     blob.match(
-      /(only pocket owner can withdraw|recipient not allowlisted|exceeds daily cap|not the household owner|household name already taken|insufficient deposit|shares must sum|Wallet selector)/i,
+      /(only pocket owner can withdraw|recipient not allowlisted|exceeds daily cap|not the household owner|household name already taken|insufficient deposit|shares must sum|Wallet selector|does not have enough balance)/i,
     );
   if (panic) return (panic[1] || panic[0]).trim();
   if (msg.length > 280) return `${msg.slice(0, 280)}…`;

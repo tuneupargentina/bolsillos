@@ -11,9 +11,10 @@ Bolsillos es una política de plata hogareña en NEAR. Cuando llega un cobro en 
 ## Probalo en 2 minutos
 
 1. Abrí la UI estática: `cd web/dist && python3 -m http.server 8080` → http://127.0.0.1:8080 (o `cd web && npm install && npm run dev`).
-2. Tocá **Conectar wallet** → preferí **Meteor Wallet** (testnet). **MyNearWallet** testnet (`https://testnet.mynearwallet.com`) sigue andando durante el sunset (desde el 31/10/2026). HERE está listada para mobile.
-3. **Minteá** 200 mUSDC a tu cuenta → **Pagá al hogar** → mirá cómo se actualizan los bolsillos. O **Creá un hogar** con la factory (`<nombre>.b575-factory.testnet`, ~3 NEAR). Retirá de un bolsillo tuyo a un destinatario allowlisted; los panics del contrato (`exceeds daily cap`, `only pocket owner can withdraw`, `recipient not allowlisted`) se muestran en la UI.
-4. Cambiá a **EN** si preferís inglés. El retiro sin gas queda en CLI: `cd relayer && node demo-gasless.mjs` (los secretos del relayer nunca van al browser).
+2. Tocá **Conectar wallet** → preferí **Meteor Wallet** (abre una **pestaña web**; la extensión es opcional). **HERE** está para mobile. **MyNearWallet** aparece al final como *retirada* y puede rechazar conexiones nuevas.
+3. **Nota para jueces:** una cuenta nueva de testnet necesita **~1 NEAR** para agregar la clave de login de la app. Fondeala con el [faucet de testnet](https://near-faucet.io/) o el [faucet oficial de la docs](https://docs.near.org/getting-started/faucet) (ambos verificados), y reintentá Conectar. Confirmá en la **pestaña** de la wallet, no en una ventana de extensión.
+4. **Minteá** 200 mUSDC a tu cuenta → **Pagá al hogar** → mirá cómo se actualizan los bolsillos. O **Creá un hogar** con la factory (`<nombre>.b575-factory.testnet`, ~3 NEAR). Retirá de un bolsillo tuyo a un destinatario allowlisted; los panics del contrato (`exceeds daily cap`, `only pocket owner can withdraw`, `recipient not allowlisted`) se muestran en la UI.
+5. Cambiá a **EN** si preferís inglés. El retiro sin gas queda en CLI: `cd relayer && node demo-gasless.mjs` (los secretos del relayer nunca van al browser).
 
 ## Hacé X → ves Y
 
@@ -22,7 +23,7 @@ Bolsillos es una política de plata hogareña en NEAR. Cuando llega un cobro en 
 | `cd contracts && cargo test` | **16 passed** |
 | `cd mock-usdc && cargo test` | **4 passed** |
 | `cd factory && cargo test` | **7 passed** |
-| Serví `web/dist/` o `npm run dev` en `web/` | Bolsillos en vivo + Wallet Selector (Meteor / MNW / HERE) |
+| Serví `web/dist/` o `npm run dev` en `web/` | Bolsillos en vivo + Wallet Selector (Meteor primero, HERE, MNW retirada) |
 | Link del explorer “Pay 200 USDC” | `EVENT_JSON` `split` con `amount` `200000000` |
 | Mamá `withdraw_pocket` 10 → `b575-momdest.testnet` | Evento de retiro; crece el `ft_balance_of` |
 | `node relayer/demo-gasless.mjs` | El relayer manda la meta-tx; el explorer muestra al relayer como signer |
@@ -46,7 +47,11 @@ Mismas tablas que en [README.md](README.md#testnet-deployment) (ids y links idé
 
 ## Wallets (testnet)
 
-Verificadas para jueces (nov 2026): **Meteor** (principal, extensión), **MyNearWallet** testnet (secundaria, sunset desde 31/10/2026), **HERE** (opcional, mobile). El retiro sin gas **no** está en la web.
+Verificadas para jueces (nov 2026): **Meteor** (principal — abre pestaña web; extensión opcional), **HERE** (opcional, mobile), **MyNearWallet** (última, *retirada*, puede rechazar conexiones nuevas).
+
+**Cuentas nuevas necesitan ~1 NEAR** para la clave de login. Pedí fondos en [near-faucet.io](https://near-faucet.io/) o el [faucet oficial de la docs](https://docs.near.org/getting-started/faucet). La web no sponsorea el login.
+
+El retiro sin gas **no** está en la web.
 
 ## Camino a mainnet (solo documentado)
 
@@ -54,7 +59,7 @@ No desplegado. No se usó la seed de `tuneup.near`. USDC nativo de Circle en NEA
 
 ## Limitaciones honestas
 
-USDC mock (faucet self-mint) · relayer confiable · gasless solo por CLI · timelock corto en el demo · polvo del split al último bolsillo · MNW en sunset · la factory pide ~3 NEAR por create.
+USDC mock (faucet self-mint) · relayer confiable · gasless solo por CLI · timelock corto en el demo · polvo del split al último bolsillo · MNW retirada · cuentas nuevas necesitan ~1 NEAR (faucet) · la factory pide ~3 NEAR por create.
 
 ## Licencia
 
