@@ -14,7 +14,7 @@ Network: NEAR testnet. All accounts are faucet-funded throwaways. No mainnet, no
 | Agent | `b575-agent.testnet` |
 | Relayer | `b575-relayer.testnet` |
 
-## Transactions
+## Storyline transactions (first successful run)
 
 | Step | Tx |
 |---|---|
@@ -25,10 +25,12 @@ Network: NEAR testnet. All accounts are faucet-funded throwaways. No mainnet, no
 | Mom withdraw 10 | https://testnet.nearblocks.io/txns/EfJUW7hQahEB7BcqRvMUeqdRJ8jQrutDhEhZkmMKWRmA |
 | Mom gasless withdraw (relayer) | https://testnet.nearblocks.io/txns/5Zx5SARwMeCwc17TtpMoePYNCsMBmobUpbwszfFXDr75 |
 
-## Policy checks
+## Latest full `scripts/e2e.sh` pass
 
-- Agent `withdraw_pocket` on savings → panic `only pocket owner can withdraw`
-- Owner withdraw 20 from savings (cap 1) → panic `exceeds daily cap`
-- Momdest `ft_balance_of` after first withdraw → `"10000000"` (10 USDC)
+- Timestamp: 2026-11-01 19:11 America/Buenos_Aires
+- Gasless tx: https://testnet.nearblocks.io/txns/CxL3yU4MDJvxBNWrdTwV6C248Rx4ZTcy2C5EbDYiRVkU
+- Agent drain: panic `only pocket owner can withdraw`
+- Unit tests: contracts **16/16**, mock-usdc **3/3**
+- `check_secretos.py`: LIMPIO
 
-Unit tests: contracts 16/16, mock-usdc 3/3.
+Note: Mom pocket `daily_cap` is 20 USDC/day; repeated e2e runs on the same UTC day should withdraw ≤ remaining_today (script uses 1+1 USDC).

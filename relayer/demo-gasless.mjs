@@ -41,18 +41,31 @@ const relayerAccount = new Account(RELAYER, provider, new KeyPairSigner(loadKey(
 const args = { pocket_id: 'mom', amount: AMOUNT, recipient: MOMDEST };
 console.log(`Signing meta-tx: ${MOM} -> ${HOUSE}.withdraw_pocket(${JSON.stringify(args)})`);
 
-const signedDelegate = await momAccount.createSignedMetaTransaction({
-  actions: [
-    actionCreators.functionCall(
-      'withdraw_pocket',
-      args,
-      BigInt('100000000000000'),
-      BigInt('0'),
-    ),
-  ],
-  blockHeightTtl: 120,
-  receiverId: HOUSE,
-});
+const actions = [
+  actionCreators.functionCall(
+    'withdraw_pocket',
+    args,
+    BigInt('100000000000000'),
+    BigInt('0'),
+  ),
+];
+
+// Prefer createSignedMetaTransaction; fall back to signedDelegate if shape differs.
+let signedDelegate;
+try {
+  const raw = await momAccount.createSignedMetaTransaction(HOUSE, actions, 120);
+  // near-js may return [bytes, SignedDelegate] or SignedDelegate directly
+  signedDelegate = Array.isArray(raw) ? (raw.find((x) => x && x.delegateAction) || raw[1]) : raw;
+  if (!signedDelegate?.delegateAction && raw?.signedDelegate) signedDelegate = raw.signedDelegate;
+} catch (e) {
+  console.warn('createSignedMetaTransaction failed, falling back to signedDelegate():', e.message);
+  signedDelegate = await momAccount.signedDelegate({ actions, blockHeightTtl: 120, receiverId: HOUSE });
+}
+
+if (!signedDelegate?.delegateAction) {
+  console.error('Unexpected signed meta-tx shape:', signedDelegate);
+  process.exit(1);
+}
 
 const receiver = signedDelegate.delegateAction.receiverId;
 if (receiver !== HOUSE) {
