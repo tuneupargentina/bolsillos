@@ -28,6 +28,7 @@ Bolsillos is a household money policy on NEAR. When a USDC payment arrives, the 
 - [Quick start](#quick-start)
 - [Mainnet path (documented only)](#mainnet-path-documented-only)
 - [Honest limitations](#honest-limitations)
+- [Libraries & AI assistance](#libraries--ai-assistance)
 - [License](#license)
 
 ## Do X → see Y
@@ -211,6 +212,20 @@ Not deployed. No `tuneup.near` seed was used. Intended path:
 - Pocket remainder dust goes to the **last** pocket by design.
 - MyNearWallet is retired and may refuse new connections; Meteor (web tab) is the preferred judge wallet. Fresh accounts need ~1 NEAR from a faucet before login.
 - Factory create needs ~3 NEAR attached (wasm storage); name must be unique under the factory.
+
+## Libraries & AI assistance
+
+Third-party libraries (no pre-existing Tune Up code or libraries are used):
+
+| Part | Libraries |
+| --- | --- |
+| Contracts (`contracts/`, `factory/`, `mock-usdc/`, Rust) | [`near-sdk`](https://crates.io/crates/near-sdk) 5.29.1, [`near-contract-standards`](https://crates.io/crates/near-contract-standards) 5.29.1 (NEP-141) |
+| Relayer (`relayer/`) and scripts (`scripts/`) | [`@near-js/*`](https://github.com/near/near-api-js) 2.3 (accounts, crypto, providers, signers, transactions, types, utils, keystores-node) |
+| Web UI (`web/`) | `@near-js/providers`, `@near-js/utils`, [NEAR Wallet Selector](https://github.com/near/wallet-selector) 10.1 (core, modal-ui, Meteor, Intear, HERE, MyNearWallet), `buffer`, `process`; build: [Vite](https://vite.dev/) 6, `vite-plugin-node-polyfills`; UI tests: [Playwright](https://playwright.dev/) |
+
+**AI assistance.** Code, tests, the demo video and documentation were drafted with AI coding assistants and
+reviewed, run and tested by the Tune Up team. **Baseline:** all code in this repository was written during the
+hackathon (first commit 2026-11-01).
 
 ## License
 

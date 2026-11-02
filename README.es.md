@@ -61,6 +61,20 @@ No desplegado. No se usó la seed de `tuneup.near`. USDC nativo de Circle en NEA
 
 USDC mock (faucet self-mint) · relayer confiable · gasless solo por CLI · timelock corto en el demo · polvo del split al último bolsillo · MNW retirada · cuentas nuevas necesitan ~1 NEAR (faucet) · la factory pide ~3 NEAR por create.
 
+## Librerías y asistencia de IA
+
+Librerías de terceros (no se usa código ni librerías previas de Tune Up):
+
+| Parte | Librerías |
+| --- | --- |
+| Contratos (`contracts/`, `factory/`, `mock-usdc/`, Rust) | `near-sdk` 5.29.1, `near-contract-standards` 5.29.1 (NEP-141) |
+| Relayer (`relayer/`) y scripts (`scripts/`) | `@near-js/*` 2.3 (accounts, crypto, providers, signers, transactions, types, utils, keystores-node) |
+| Web (`web/`) | `@near-js/providers`, `@near-js/utils`, NEAR Wallet Selector 10.1 (core, modal-ui, Meteor, Intear, HERE, MyNearWallet), `buffer`, `process`; build: Vite 6, `vite-plugin-node-polyfills`; pruebas de UI: Playwright |
+
+**Asistencia de IA.** El código, las pruebas, el video de demo y la documentación se redactaron con asistentes de
+programación con IA y el equipo de Tune Up los revisó, ejecutó y probó. **Base previa:** todo el código de este
+repositorio se escribió durante el hackathon (primer commit 2026-11-01).
+
 ## Licencia
 
 MIT · Copyright (c) 2026 Luis A. Santangelo / Tune Up
